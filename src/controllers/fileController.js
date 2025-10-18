@@ -124,4 +124,16 @@ export const fileController = {
       res.status(500).json({ error: "Failed to delete file" });
     }
   },
+  
+  detail: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const original = await metadataService.getFileById(id);
+      if (!original) return res.status(404).json({ error: "File not found" });
+      const thumbnails = await metadataService.getThumbnailsByParentId(original.id);
+      res.json({ original, thumbnails });
+    } catch (err) {
+      res.status(500).json({ error: "Failed to fetch file detail" });
+    }
+  },
 };

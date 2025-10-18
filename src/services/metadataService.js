@@ -30,6 +30,13 @@ export const metadataService = {
         return null;
     },
 
+    async getThumbnailsByParentId(parentId) {
+        const { data } = await axios.get(`${config.jsonServerUrl}`, {
+            params: { parentId, type: "thumbnail" },
+        });
+        return Array.isArray(data) ? data : [];
+    },
+
     async deleteFileById(id) {
         await axios.delete(`${config.jsonServerUrl}/${id}`);
         return true;
