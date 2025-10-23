@@ -108,15 +108,44 @@ export const fileController = {
       }
       if (!file) return res.status(404).json({ error: "File not found" });
 
+      // If deleting a thumbnail record, just delete it
+      if (file.type === 'thumbnail') {
+        try {
+          await fileService.deleteFromMinio(file.storedName);
+        } catch (e) {
+          console.warn("MinIO delete warning (thumb):", e?.message || e);
+        }
+        await metadataService.deleteFileById(file.id);
+        return res.json({ message: "Thumbnail deleted successfully" });
+      }
+
+      // Otherwise, cascade: delete thumbnails first, then original
+      try {
+        const thumbs = await metadataService.getThumbnailsByParentId(file.id);
+        for (const t of thumbs) {
+          try {
+            await fileService.deleteFromMinio(t.storedName);
+          } catch (e) {
+            console.warn("MinIO delete warning (thumb):", e?.message || e);
+          }
+          try {
+            await metadataService.deleteFileById(t.id);
+          } catch (e) {
+            console.warn("Metadata delete warning (thumb):", e?.message || e);
+          }
+        }
+      } catch (e) {
+        console.warn("Thumbnail lookup failed:", e?.message || e);
+      }
+
       try {
         await fileService.deleteFromMinio(file.storedName);
       } catch (e) {
-        // If object already missing, still attempt metadata delete
-        console.warn("MinIO delete warning:", e?.message || e);
+        console.warn("MinIO delete warning (original):", e?.message || e);
       }
       await metadataService.deleteFileById(file.id);
 
-      res.json({ message: "File deleted successfully" });
+      res.json({ message: "File and thumbnails deleted successfully" });
     } catch (err) {
       if (err?.response?.status === 404) {
         return res.status(404).json({ error: "File not found" });

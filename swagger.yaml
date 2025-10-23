@@ -1,0 +1,192 @@
+openapi: 3.0.0
+info:
+  title: Any File Uploads API
+  version: 1.0.0
+  description: API for uploading files, generating thumbnails, and managing metadata via JSON Server and MinIO.
+
+servers:
+  - url: http://localhost:4000
+    description: Local API server
+
+paths:
+  /api/files/upload:
+    post:
+      summary: Upload a file
+      description: |
+        Uploads a file. For image/* files, generates two thumbnails (200px and 400px) and stores metadata for each
+        with public URLs. For non-image files, stores only the original.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: File uploaded
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/UploadResponseImage'
+                  - $ref: '#/components/schemas/UploadResponseFile'
+        '400':
+          description: No file provided
+        '500':
+          description: Upload failed
+
+  /api/files:
+    get:
+      summary: List files and thumbnails
+      description: Returns all metadata records stored in JSON Server (originals and thumbnails).
+      responses:
+        '200':
+          description: List of records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  oneOf:
+                    - $ref: '#/components/schemas/FileRecord'
+                    - $ref: '#/components/schemas/ThumbnailRecord'
+        '500':
+          description: Failed to fetch files
+
+  /api/files/{id}:
+    delete:
+      summary: Delete a file by id
+      description: Deletes the original file object from MinIO and removes the metadata record. If the record is an original (not a thumbnail), this cascades to delete all associated thumbnail objects and their metadata first.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID of the metadata record
+      responses:
+        '200':
+          description: File deleted successfully
+        '404':
+          description: File not found
+        '500':
+          description: Failed to delete file
+
+  /api/files/{id}/detail:
+    get:
+      summary: Get file detail
+      description: Returns the original record and its thumbnails (if any).
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID of the original record
+      responses:
+        '200':
+          description: File detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+        '404':
+          description: File not found
+        '500':
+          description: Failed to fetch file detail
+
+components:
+  schemas:
+    FileRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 123
+        fileName:
+          type: string
+          example: photo.jpg
+        storedName:
+          type: string
+          example: 4a8f2c1b-...-tmp
+        mimeType:
+          type: string
+          example: image/jpeg
+        size:
+          type: integer
+          example: 512345
+        uploadedAt:
+          type: string
+          format: date-time
+        url:
+          type: string
+          example: http://127.0.0.1:9000/uploads/4a8f2c1b.jpg
+        thumbnailIds:
+          type: array
+          items:
+            type: integer
+        type:
+          type: string
+          description: Present for thumbnails; omitted for originals
+          example: null
+
+    ThumbnailRecord:
+      allOf:
+        - $ref: '#/components/schemas/FileRecord'
+        - type: object
+          properties:
+            parentId:
+              type: integer
+              example: 123
+            width:
+              type: integer
+              example: 400
+            height:
+              type: integer
+              example: 300
+            type:
+              type: string
+              example: thumbnail
+            variant:
+              type: string
+              example: "200"
+
+    UploadResponseFile:
+      type: object
+      properties:
+        message:
+          type: string
+          example: File uploaded successfully
+        data:
+          $ref: '#/components/schemas/FileRecord'
+
+    UploadResponseImage:
+      type: object
+      properties:
+        message:
+          type: string
+          example: File uploaded successfully
+        data:
+          type: object
+          properties:
+            original:
+              $ref: '#/components/schemas/FileRecord'
+            thumbnails:
+              type: array
+              items:
+                $ref: '#/components/schemas/ThumbnailRecord'
+
+    DetailResponse:
+      type: object
+      properties:
+        original:
+          $ref: '#/components/schemas/FileRecord'
+        thumbnails:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThumbnailRecord'
