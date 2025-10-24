@@ -1,19 +1,6 @@
 {
   "files": [
     {
-      "id": "af85",
-      "fileName": "testing_7.PNG",
-      "storedName": "b3e289cec43bbff28a26fbd998dfa38b",
-      "mimeType": "image/png",
-      "size": 51045,
-      "uploadedAt": "2025-10-23T10:27:39.807Z",
-      "url": "http://127.0.0.1:9000/uploads/b3e289cec43bbff28a26fbd998dfa38b",
-      "thumbnailIds": [
-        "3c5a",
-        "16f8"
-      ]
-    },
-    {
       "id": "3c5a",
       "parentId": "af85",
       "fileName": "200 - testing_7.PNG",

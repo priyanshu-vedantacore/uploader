@@ -128,7 +128,7 @@ export default function UploadFiles() {
           >
             {uploading ? 'Uploading…' : 'Choose File'}
           </button>
-          <input ref={inputRef} type="file" style={{ display: 'none' }} onChange={(e) => handleUpload(e.target.files?.[0])} />
+          <input ref={inputRef} type="file" style={{ display: 'none' }} data-testid="file-input" onChange={(e) => handleUpload(e.target.files?.[0])} />
         </div>
       </div>
     );
