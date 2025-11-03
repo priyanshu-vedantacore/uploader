@@ -95,64 +95,68 @@ export const fileController = {
   },
 
   delete: async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { storedName } = req.query;
-      let file = await metadataService.getFileById(id);
-      if (!file && storedName) {
-        file = await metadataService.getFileByStoredName(storedName);
-      }
-      if (!file) {
-        // As a convenience, treat :id as storedName fallback
-        file = await metadataService.getFileByStoredName(id);
-      }
-      if (!file) return res.status(404).json({ error: "File not found" });
-
-      // If deleting a thumbnail record, just delete it
-      if (file.type === 'thumbnail') {
-        try {
-          await fileService.deleteFromMinio(file.storedName);
-        } catch (e) {
-          console.warn("MinIO delete warning (thumb):", e?.message || e);
-        }
-        await metadataService.deleteFileById(file.id);
-        return res.json({ message: "Thumbnail deleted successfully" });
-      }
-
-      // Otherwise, cascade: delete thumbnails first, then original
       try {
-        const thumbs = await metadataService.getThumbnailsByParentId(file.id);
-        for (const t of thumbs) {
+        const { id } = req.params;
+        const { storedName } = req.query;
+        let file = await metadataService.getFileById(id);
+        if (!file && storedName) {
+          file = await metadataService.getFileByStoredName(storedName);
+        }
+        if (!file) {
+          // As a convenience, treat :id as storedName fallback
+          file = await metadataService.getFileByStoredName(id);
+        }
+        if (!file) return res.status(404).json({ error: "File not found" });
+  
+        // If deleting a thumbnail record, just delete it
+        if (file.type === 'thumbnail' && file.mimeType === "image/jpeg") {
           try {
-            await fileService.deleteFromMinio(t.storedName);
+            await fileService.deleteFromMinio(file.storedName);
           } catch (e) {
             console.warn("MinIO delete warning (thumb):", e?.message || e);
           }
-          try {
-            await metadataService.deleteFileById(t.id);
-          } catch (e) {
-            console.warn("Metadata delete warning (thumb):", e?.message || e);
-          }
+          await metadataService.deleteFileById(file.id);
+          return res.json({ message: "Thumbnail deleted successfully" });
         }
-      } catch (e) {
-        console.warn("Thumbnail lookup failed:", e?.message || e);
+  
+        // Otherwise, cascade: delete thumbnails first, then original
+        if (file.mimeType === 'image/jpeg') {
+          try {
+            const thumbs = await metadataService.getThumbnailsByParentId(file.id);
+            for (const t of thumbs) {
+              try {
+                await fileService.deleteFromMinio(t.storedName);
+              } catch (e) {
+                console.warn("MinIO delete warning (thumb):", e?.message || e);
+              }
+              try {
+                await metadataService.deleteFileById(t.id);
+              } catch (e) {
+                console.warn("Metadata delete warning (thumb):", e?.message || e);
+              }
+            }
+          } catch (e) {
+            console.warn("Thumbnail lookup failed:", e?.message || e);
+          }
+        } else {
+          
+        }
+  
+        try {
+          await fileService.deleteFromMinio(file.storedName);
+        } catch (e) {
+          console.warn("MinIO delete warning (original):", e?.message || e);
+        }
+        await metadataService.deleteFileById(file.id);
+  
+        res.json({ message: "File and thumbnails deleted successfully" });
+      } catch (err) {
+        if (err?.response?.status === 404) {
+          return res.status(404).json({ error: "File not found" });
+        }
+        res.status(500).json({ error: "Failed to delete file" });
       }
-
-      try {
-        await fileService.deleteFromMinio(file.storedName);
-      } catch (e) {
-        console.warn("MinIO delete warning (original):", e?.message || e);
-      }
-      await metadataService.deleteFileById(file.id);
-
-      res.json({ message: "File and thumbnails deleted successfully" });
-    } catch (err) {
-      if (err?.response?.status === 404) {
-        return res.status(404).json({ error: "File not found" });
-      }
-      res.status(500).json({ error: "Failed to delete file" });
-    }
-  },
+    },
   
   detail: async (req, res) => {
     try {

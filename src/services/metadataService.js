@@ -32,7 +32,7 @@ export const metadataService = {
 
     async getThumbnailsByParentId(parentId) {
         const { data } = await axios.get(`${config.jsonServerUrl}`, {
-            params: { parentId, type: "thumbnail" },
+            params: { parentId },
         });
         return Array.isArray(data) ? data : [];
     },

@@ -1,32 +1,3 @@
 {
-  "files": [
-    {
-      "id": "3c5a",
-      "parentId": "af85",
-      "fileName": "200 - testing_7.PNG",
-      "storedName": "thumbnails/200/b3e289cec43bbff28a26fbd998dfa38b.jpg",
-      "mimeType": "image/jpeg",
-      "size": 9673,
-      "width": 191,
-      "height": 200,
-      "uploadedAt": "2025-10-23T10:27:39.884Z",
-      "url": "http://127.0.0.1:9000/uploads/thumbnails/200/b3e289cec43bbff28a26fbd998dfa38b.jpg",
-      "type": "thumbnail",
-      "variant": "200"
-    },
-    {
-      "id": "16f8",
-      "parentId": "af85",
-      "fileName": "400 - testing_7.PNG",
-      "storedName": "thumbnails/400/b3e289cec43bbff28a26fbd998dfa38b.jpg",
-      "mimeType": "image/jpeg",
-      "size": 24639,
-      "width": 382,
-      "height": 400,
-      "uploadedAt": "2025-10-23T10:27:39.905Z",
-      "url": "http://127.0.0.1:9000/uploads/thumbnails/400/b3e289cec43bbff28a26fbd998dfa38b.jpg",
-      "type": "thumbnail",
-      "variant": "400"
-    }
-  ]
+  "files": []
 }
